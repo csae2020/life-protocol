@@ -1,718 +1,922 @@
-<!-- Chosen Palette: Calm Neutrals (Stone, Sky Blue) -->
-<!-- Application Structure Plan: A 3-tab SPA. Tab 1 ('The 6-Day Plan') is the core interactive report, using sub-navigation for 6 workout days. This immediately answers the user's need for a plan. Tab 2 ('Core Principles') provides the 'science' (the 'why') from the report requirements, including a visual (Pie Chart) for volume breakdown. Tab 3 ('1RM & Progression Calculator') provides a crucial interactive tool (%1RM calculator) directly requested by the user to apply the plan. This structure separates the 'what' (Plan) from the 'why' (Principles) and the 'how' (Calculator) for maximum usability and clarity. -->
-<!-- Visualization & Content Choices: Report Info: 6-day workout plan details. Goal: Present detailed, day-by-day schedule. Method: Interactive tabbed view (HTML/JS) for each day, detailing exercises/sets/reps/%1RM/Rest. Interaction: User clicks 'Monday' through 'Saturday' to see that day's specific workout. Justification: Most direct way to present a complex, multi-day schedule in a clean, non-overwhelming format. | Report Info: User's %1RM requirement and beginner status. Goal: Enable user to find their working weights and apply the plan. Method: 1RM Calculator Tool (HTML/JS). Interaction: User inputs weight/reps, clicks 'Calculate', and receives an estimated 1RM and a full table of working percentages. Justification: Essential tool for plan adherence and safety, as a beginner should not test a true 1RM. | Report Info: 'Science-based' requirement. Goal: Summarize program focus visually. Method: Pie Chart (Chart.js/Canvas). Interaction: Hover for tooltip. Justification: Quick visual summary of muscle group volume. -->
-<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-M">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive 6-Day Workout Plan</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@0,900&display=swap" rel="stylesheet">
+    <title>Concurrent Strength & Hypertrophy Protocol</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            color-scheme: light;
+            --bg: #f7f7f8;
+            --surface: #ffffff;
+            --border: #e4e4e7;
+            --text: #1f2933;
+            --text-muted: #6b7280;
+            --accent: #2563eb;
+            --accent-soft: rgba(37, 99, 235, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
+            margin: 0;
             font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
         }
-        .chart-container {
-            position: relative;
+
+        header {
+            padding: clamp(2.5rem, 5vw, 4.5rem) clamp(1.5rem, 6vw, 5rem) 1rem;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            letter-spacing: -0.02em;
+        }
+
+        header p {
+            margin: 0.75rem 0 2rem;
+            color: var(--text-muted);
+            max-width: 720px;
+        }
+
+        nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: var(--text);
+            font-weight: 600;
+            padding: 0.55rem 0.95rem;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: transparent;
+            transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+        }
+
+        nav a:hover,
+        nav a:focus {
+            background: var(--accent-soft);
+            color: var(--accent);
+            border-color: rgba(37, 99, 235, 0.35);
+            outline: none;
+        }
+
+        main {
+            padding: clamp(2rem, 5vw, 4rem) clamp(1.5rem, 6vw, 5rem) 5rem;
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            gap: clamp(2.5rem, 6vw, 4.5rem);
+        }
+
+        section {
+            background: var(--surface);
+            padding: clamp(1.75rem, 4vw, 2.75rem);
+            border-radius: 18px;
+            border: 1px solid var(--border);
+            box-shadow: 0 24px 50px -32px rgba(15, 23, 42, 0.25);
+        }
+
+        section h2 {
+            margin: 0 0 0.75rem;
+            font-size: clamp(1.35rem, 3vw, 1.9rem);
+            letter-spacing: -0.01em;
+        }
+
+        section > p {
+            margin: 0 0 1.5rem;
+            color: var(--text-muted);
+        }
+
+        h3 {
+            margin: 1.75rem 0 0.75rem;
+            font-size: 1.125rem;
+        }
+
+        h4 {
+            margin: 1.5rem 0 0.5rem;
+            font-size: 1rem;
+        }
+
+        ul, ol {
+            padding-left: 1.1rem;
+            margin: 0 0 1rem;
+        }
+
+        ul li + li,
+        ol li + li {
+            margin-top: 0.4rem;
+        }
+
+        .highlight {
+            background: var(--accent-soft);
+            border-left: 3px solid var(--accent);
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            color: var(--text);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1rem;
+        }
+
+        table {
             width: 100%;
-            max-width: 400px;
-            margin-left: auto;
-            margin-right: auto;
-            height: 300px;
-            max-height: 350px;
+            border-collapse: collapse;
+            margin: 1.25rem 0 0;
+            font-size: 0.94rem;
         }
-        .nav-button {
-            @apply py-3 px-4 md:px-5 lg:px-6 text-sm md:text-base font-medium text-center text-gray-500 border-b-2 border-transparent rounded-t-lg hover:text-gray-700 hover:bg-stone-100 hover:border-gray-300 cursor-pointer transition-all;
+
+        th,
+        td {
+            padding: 0.75rem 0.9rem;
+            border-bottom: 1px solid var(--border);
+            text-align: left;
         }
-        .nav-button.active {
-            @apply text-sky-600 border-sky-600 bg-white;
+
+        th {
+            background: #f2f4f8;
+            font-weight: 600;
+            color: var(--text);
         }
-        .workout-nav-button {
-            @apply py-2 px-4 text-sm font-medium text-center text-gray-600 bg-white rounded-lg shadow-sm border border-gray-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-all;
+
+        .subtle {
+            font-size: 0.92rem;
+            color: var(--text-muted);
         }
-        .workout-nav-button.active {
-            @apply bg-sky-600 text-white hover:bg-sky-700 border-sky-600;
+
+        details {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1rem 1.25rem;
+            margin-top: 1rem;
+            background: #fafafa;
         }
-        .content-section, .workout-content {
-            animation: fadeIn 0.5s ease-in-out;
+
+        summary {
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+
+        summary::-webkit-details-marker {
+            display: none;
         }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.2rem 0.65rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--accent);
+            background: var(--accent-soft);
+        }
+
+        .calculator {
+            display: grid;
+            gap: 1rem;
+            max-width: 420px;
+        }
+
+        label {
+            font-weight: 600;
+        }
+
         input[type="number"] {
-            @apply w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500;
+            width: 100%;
+            padding: 0.7rem 0.85rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: #fafafa;
+            font-size: 1rem;
+            transition: border 0.2s ease;
+        }
+
+        input[type="number"]:focus {
+            border-color: var(--accent);
+            outline: none;
+        }
+
+        button {
+            cursor: pointer;
+            border: none;
+            border-radius: 999px;
+            padding: 0.75rem 1.25rem;
+            font-weight: 600;
+            background: var(--accent);
+            color: white;
+            font-size: 1rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        button:hover,
+        button:focus {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 24px -12px rgba(37, 99, 235, 0.6);
+            outline: none;
+        }
+
+        .result-card {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 1rem;
+            border: 1px solid var(--border);
+            margin-top: 1rem;
+        }
+
+        footer {
+            padding: 3rem 1.5rem 4rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 720px) {
+            header {
+                position: static;
+            }
         }
     </style>
 </head>
-<body class="bg-stone-50 text-stone-800">
-
-    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
-        <header class="mb-8">
-            <h1 class="text-3xl md:text-5xl font-bold text-sky-700 mb-2">Your 6-Day Hypertrophy & Strength Plan</h1>
-            <p class="text-lg md:text-xl text-stone-600">A science-based protocol optimized for effectiveness, targeting your specific goals for mass and strength.</p>
-        </header>
-
-        <nav class="flex flex-wrap border-b-2 border-stone-200 mb-6 gap-x-2">
-            <button id="nav-plan" class="nav-button active">The 6-Day Plan</button>
-            <button id="nav-principles" class="nav-button">Core Principles</button>
-            <button id="nav-calculator" class="nav-button">Progression Calculator</button>
+<body>
+    <header>
+        <h1>A Scientific Protocol for Concurrent Strength & Hypertrophy</h1>
+        <p>Reference this minimalist training companion during your sessions. Every section distills the research-backed framework you outlined—pairing daily workouts with the principles, recovery strategies, and calculation tools that keep progress objective.</p>
+        <nav>
+            <a href="#overview">Overview</a>
+            <a href="#adaptation">Muscle Adaptation</a>
+            <a href="#variables">Programming Variables</a>
+            <a href="#progression">Progression</a>
+            <a href="#recovery">Recovery & Deloads</a>
+            <a href="#program">12-Week Program</a>
+            <a href="#execution">Execution Notes</a>
+            <a href="#calculator">1RM Calculator</a>
         </nav>
+    </header>
 
-        <main>
-            <section id="content-plan" class="content-section">
-                <div class="bg-white p-5 rounded-lg shadow-sm border border-stone-200 mb-6">
-                    <p class="text-stone-700 leading-relaxed">This is your 6-day Push/Pull/Legs (PPL) split. This structure hits every major muscle group twice per week, which is optimal for maximizing both muscle growth and strength gains. Below, you can click on each day to see the specific exercises. Follow the plan, focus on your form, and use the 'Calculator' tab to find your starting weights.</p>
+    <main>
+        <section id="overview">
+            <h2>Overview</h2>
+            <p>This hybrid upper/lower protocol blends strength-specific sessions with higher-volume hypertrophy work. The layout provides quick-glance coaching cues alongside complete session breakdowns so you can stay focused on intent.</p>
+            <div class="grid-2">
+                <div class="highlight">
+                    <h3>Weekly Rhythm</h3>
+                    <ul>
+                        <li><strong>6 training days</strong> across Upper A/B/C and Lower A/B/C.</li>
+                        <li><strong>2× frequency</strong> per muscle group to keep muscle protein synthesis elevated.</li>
+                        <li>Embedded <strong>linear load progressions</strong> with scheduled deloads on Weeks 5 and 10.</li>
+                    </ul>
                 </div>
-
-                <div class="flex flex-wrap gap-2 md:gap-4 mb-6">
-                    <button id="workout-day-1-btn" class="workout-nav-button active">Monday: Push A (Strength)</button>
-                    <button id="workout-day-2-btn" class="workout-nav-button">Tuesday: Pull A (Mass)</button>
-                    <button id="workout-day-3-btn" class="workout-nav-button">Wednesday: Legs A (Mass)</button>
-                    <button id="workout-day-4-btn" class="workout-nav-button">Thursday: Push B (Mass)</button>
-                    <button id="workout-day-5-btn" class="workout-nav-button">Friday: Pull B (Mass)</button>
-                    <button id="workout-day-6-btn" class="workout-nav-button">Saturday: Legs B (Mass)</button>
-                    <button class="workout-nav-button bg-stone-100 text-stone-500 cursor-not-allowed" disabled>Sunday: Rest</button>
+                <div class="highlight">
+                    <h3>Key Metrics</h3>
+                    <ul>
+                        <li>Track <strong>hard sets per muscle</strong> (10–20+ weekly).</li>
+                        <li>Anchor effort with <strong>reps in reserve (RIR)</strong>: 0–1 on final sets of priority lifts.</li>
+                        <li>Use the <strong>1RM calculator</strong> to set starting loads without max testing.</li>
+                    </ul>
                 </div>
+            </div>
+        </section>
 
-                <div id="workout-day-1" class="workout-content space-y-4">
-                    <h3 class="text-2xl font-bold text-sky-700">Monday: Push A (Chest, Shoulders, Triceps) - Strength Focus</h3>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Barbell Bench Press</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>4</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>5</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>80-85% 1RM</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>3-5 mins</div>
-                        </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Overhead Press (Dumbbell)</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>3</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>6-8</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>75-80% 1RM</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>2-3 mins</div>
-                        </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Dumbbell Incline Press</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>3</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>8-10</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>~75% 1RM</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>2-3 mins</div>
-                        </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Tricep Dips (Assisted or Bodyweight)</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>3</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>8-12</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>To failure</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>2 mins</div>
-                        </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Forearm Wrist Extensions (Dumbbell)</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>3</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>15-20</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>Light weight</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>60-90 secs</div>
-                        </div>
-                    </div>
+        <section id="adaptation">
+            <h2>The Framework for Muscle Adaptation</h2>
+            <p>Separate stimuli drive neural strength and muscular size. This plan places both under one umbrella by alternating heavy sessions with metabolically demanding volume work.</p>
+            <div class="grid-2">
+                <div>
+                    <h3>Strength vs. Hypertrophy</h3>
+                    <ul>
+                        <li><strong>Strength</strong>: heavy loads (&gt;80% 1RM), low reps (1–5), long rest (3–5 min).</li>
+                        <li><strong>Hypertrophy</strong>: moderate loads (60–85% 1RM), 6–20 reps, rest 60–180 sec.</li>
+                        <li>Neural efficiency and myofibrillar growth for strength; sarcoplasmic expansion adds size.</li>
+                    </ul>
                 </div>
-
-                <div id="workout-day-2" class="workout-content hidden space-y-4">
-                    <h3 class="text-2xl font-bold text-sky-700">Tuesday: Pull A (Back, Biceps, Forearms) - Mass Focus</h3>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Pull-Ups (Assisted or Bodyweight)</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>4</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>6-10</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>To failure</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>2-3 mins</div>
-                        </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Seated Rows</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>3</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>8-12</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>~75% 1RM</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>2-3 mins</div>
-                        </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Lat Pulldowns (Wide Grip)</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>3</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>10-15</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>~70% 1RM</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>90 secs</div>
-                        </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Dumbbell Bicep Curls</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>3</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>10-12</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>To failure</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>90 secs</div>
-                        </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Forearm Wrist Curls (Dumbbell)</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>3</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>15-20</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>Light weight</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>60-90 secs</div>
-                        </div>
-                    </div>
+                <div>
+                    <h3>Two Hypertrophy Pathways</h3>
+                    <ul>
+                        <li><strong>Myofibrillar</strong>: Dense contractile tissue from heavy pressing, squatting, and rowing.</li>
+                        <li><strong>Sarcoplasmic</strong>: Higher-rep metabolic stress from flyes, curls, extensions, machines.</li>
+                        <li>Alternating emphasis ensures larger muscle cross-sectional area <em>and</em> higher force potential.</li>
+                    </ul>
                 </div>
+            </div>
+        </section>
 
-                <div id="workout-day-3" class="workout-content hidden space-y-4">
-                    <h3 class="text-2xl font-bold text-sky-700">Wednesday: Legs A (Quads, Hamstrings, Calves) - Mass Focus</h3>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Barbell Squats</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>4</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>6-8</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>~80% 1RM</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>3-5 mins</div>
-                        </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Leg Press</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>3</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>10-15</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>~70% 1RM</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>2-3 mins</div>
-                        </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Leg Curls</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>3</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>10-12</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>Focus on form</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>2-3 mins</div>
-                        </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Leg Extensions</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>3</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>12-15</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>To failure</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>90 secs</div>
-                        </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Seated Calf Raises</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>4</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>15-20</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>To failure</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>60 secs</div>
-                        </div>
-                    </div>
+        <section id="variables">
+            <h2>Programming Variables</h2>
+            <p>Manipulate these levers intentionally—volume, intensity, rest, and frequency—to signal the adaptation you need on any given day.</p>
+            <h3>Training Volume</h3>
+            <p class="subtle">Primary driver of hypertrophy. Target 10–20+ hard sets per muscle group each week, adjusting based on recovery and rate of progress.</p>
+
+            <h3>Intensity &amp; Repetition Zones</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Goal</th>
+                        <th>Primary Adaptation</th>
+                        <th>Intensity (%1RM)</th>
+                        <th>Repetition Range</th>
+                        <th>Inter-set Rest</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Strength</td>
+                        <td>Neuromuscular + Myofibrillar</td>
+                        <td>&gt;80%</td>
+                        <td>1–5</td>
+                        <td>3–5 min</td>
+                    </tr>
+                    <tr>
+                        <td>Hypertrophy</td>
+                        <td>Myofibrillar + Sarcoplasmic</td>
+                        <td>60–85%</td>
+                        <td>6–20+</td>
+                        <td>1–3 min</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Rest Periods</h3>
+            <ul>
+                <li><strong>Heavy compounds</strong>: 3–5 minutes to fully replenish ATP/PC stores.</li>
+                <li><strong>Moderate compounds</strong>: 120–180 seconds to balance output and metabolic stress.</li>
+                <li><strong>Isolation work</strong>: 60–90 seconds; shorten slightly during pump finishers.</li>
+            </ul>
+
+            <h3>Training Frequency</h3>
+            <p class="subtle">Splitting volume across two weekly touches per muscle group improves set quality, total tonnage, and skill practice on key lifts.</p>
+        </section>
+
+        <section id="progression">
+            <h2>Linear Progression &amp; Overload</h2>
+            <p>Progressive overload remains the non-negotiable. Linearly increase stress, adjust when reps stall, and rotate overload methods when necessary.</p>
+            <div class="grid-2">
+                <div>
+                    <h3>Primary Method</h3>
+                    <ul>
+                        <li>Establish baseline loads from the calculator.</li>
+                        <li>Add weight weekly: <strong>Upper body</strong> +1.25–2.5 kg, <strong>Lower body</strong> +2.5–5 kg.</li>
+                        <li>If you miss the prescription, repeat the same weight next session before progressing.</li>
+                    </ul>
                 </div>
-
-                <div id="workout-day-4" class="workout-content hidden space-y-4">
-                    <h3 class="text-2xl font-bold text-sky-700">Thursday: Push B (Chest, Shoulders, Triceps) - Mass Focus</h3>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Dumbbell Bench Press (Flat)</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>3</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>8-12</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>~75% 1RM</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>2-3 mins</div>
-                        </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Seated Dumbbell Shoulder Press</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>3</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>10-12</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>~75% 1RM</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>2 mins</div>
-                        </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Cable Flys (Mid-Chest)</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>3</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>12-15</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>To failure</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>90 secs</div>
-                        </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Tricep Rope Pushdowns</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>3</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>12-15</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>To failure</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>90 secs</div>
-                        </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Lateral Raises (Dumbbell)</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>3</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>15-20</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>Light weight</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>60-90 secs</div>
-                        </div>
-                    </div>
+                <div>
+                    <h3>Alternative Overload</h3>
+                    <ul>
+                        <li>Extra repetitions at the same load.</li>
+                        <li>Additional hard sets (while monitoring fatigue).</li>
+                        <li>Improved range of motion or tighter tempo.</li>
+                        <li>Reduced rest intervals (for hypertrophy days only).</li>
+                    </ul>
                 </div>
+            </div>
+            <div class="highlight">
+                <strong>Plateau Check:</strong> If lifts stall for two consecutive weeks, assess sleep, nutrition, and stress. When those are on point, consider a technique refinement block, micro-loading, or an extra rest day.
+            </div>
+        </section>
 
-                <div id="workout-day-5" class="workout-content hidden space-y-4">
-                    <h3 class="text-2xl font-bold text-sky-700">Friday: Pull B (Back, Biceps, Forearms) - Mass Focus</h3>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Lat Pulldowns (Wide Grip)</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>1</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>5</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>Work up to 1 heavy set</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>3-5 mins</div>
-                        </div>
-                        <p class="text-sm text-stone-600 mt-2">Note: Focus on perfect form. This is your main strength pull. Treat warmup sets seriously.</p>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Seated Cable Rows (V-Bar)</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>3</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>10-12</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>~75% 1RM</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>2 mins</div>
-                        </div>
-                    </div>
-                    <div class.="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Single-Arm Dumbbell Rows</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>3</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>8-10 (per arm)</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>Heavy</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>2 mins</div>
-                        </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Hammer Curls</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>3</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>10-12</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>To failure</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>90 secs</div>
-                        </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Forearm Wrist Curls (Dumbbell)</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>3</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>15-20</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>Light weight</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>60-90 secs</div>
-                        </div>
-                    </div>
+        <section id="recovery">
+            <h2>Recovery Architecture</h2>
+            <p>Training stress drives adaptation only when recovery completes the cycle. Build nutrition, sleep, and strategic deloads into the plan.</p>
+            <div class="grid-2">
+                <div>
+                    <h3>Daily Recovery</h3>
+                    <ul>
+                        <li><strong>Sleep</strong>: 7–9 hours; anchor bedtime and wake-up times.</li>
+                        <li><strong>Protein</strong>: 1.6–2.2 g/kg bodyweight per day split across 4–5 meals.</li>
+                        <li><strong>Hydration</strong>: ~35–40 ml/kg, plus electrolytes during longer sessions.</li>
+                    </ul>
                 </div>
-
-                <div id="workout-day-6" class="workout-content hidden space-y-4">
-                    <h3 class="text-2xl font-bold text-sky-700">Saturday: Legs B (Quads, Hamstrings, Calves) - Mass Focus</h3>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Front Squats (or Hack Squats)</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>3</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>8-12</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>~75% 1RM</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>2-3 mins</div>
-                        </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Walking Lunges (Dumbbell)</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>3</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>10-12 (per leg)</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>To failure</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>2-3 mins</div>
-                        </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Seated Leg Curls</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>3</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>12-15</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>To failure</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>90 secs</div>
-                        </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Leg Extensions</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>3</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>15-20 (Drop set on last set)</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>To failure</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>90 secs</div>
-                        </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
-                        <h4 class="font-bold text-lg text-sky-600">Standing Calf Raises</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
-                            <div><span class="font-semibold block text-sm text-stone-500">Sets</span>4</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Reps</span>15-20</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Intensity</span>To failure</div>
-                            <div><span class="font-semibold block text-sm text-stone-500">Rest</span>60 secs</div>
-                        </div>
-                    </div>
+                <div>
+                    <h3>Deload Protocol</h3>
+                    <ul>
+                        <li>Every Week 5 &amp; 10 reduce <strong>volume</strong> by ~40%.</li>
+                        <li>Lower <strong>intensity</strong> to 50–60% of usual working loads.</li>
+                        <li>Focus on technique, mobility, and sleep—supercompensation follows.</li>
+                    </ul>
                 </div>
+            </div>
+            <p class="subtle">A single deload week preserves strength and muscle while clearing fatigue. Treat it as active recovery, not lost progress.</p>
+        </section>
 
-            </section>
+        <section id="program">
+            <h2>12-Week Integrated Program</h2>
+            <p>Rotate three unique upper and three lower sessions. Each detail card includes set/rep prescriptions, rest targets, and focus cues.</p>
+            <h3>Weekly Schedule</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Day</th>
+                        <th>Session</th>
+                        <th>Focus</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Day 1</td>
+                        <td>Upper A</td>
+                        <td>Strength emphasis</td>
+                    </tr>
+                    <tr>
+                        <td>Day 2</td>
+                        <td>Lower A</td>
+                        <td>Hypertrophy emphasis</td>
+                    </tr>
+                    <tr>
+                        <td>Day 3</td>
+                        <td>Upper B</td>
+                        <td>Hypertrophy emphasis</td>
+                    </tr>
+                    <tr>
+                        <td>Day 4</td>
+                        <td>Lower B</td>
+                        <td>Strength emphasis</td>
+                    </tr>
+                    <tr>
+                        <td>Day 5</td>
+                        <td>Upper C</td>
+                        <td>Arm &amp; chest volume</td>
+                    </tr>
+                    <tr>
+                        <td>Day 6</td>
+                        <td>Lower C</td>
+                        <td>Leg &amp; forearm volume</td>
+                    </tr>
+                    <tr>
+                        <td>Day 7</td>
+                        <td>Rest</td>
+                        <td>Walk, mobility, recovery habits</td>
+                    </tr>
+                </tbody>
+            </table>
 
-            <section id="content-principles" class="content-section hidden">
-                <div class="bg-white p-5 rounded-lg shadow-sm border border-stone-200 mb-6">
-                    <p class="text-stone-700 leading-relaxed">You wanted a plan based on science, and this is the "why" behind the structure. This program is built on five key principles to maximize your results. Understanding these will help you stay consistent and make smart adjustments as you progress.</p>
-                </div>
-                
-                <div class="grid md:grid-cols-2 gap-6">
-                    <div class="bg-white p-6 rounded-lg shadow border border-stone-200 space-y-4">
-                        <h3 class="text-xl font-bold text-sky-700">1. Progressive Overload</h3>
-                        <p class="text-stone-700">This is the most important principle. To get bigger and stronger, you must continually make your muscles work harder than they're used to. Since you preferred adding weight, the plan is simple:</p>
-                        <p class="font-semibold text-sky-800 bg-sky-50 p-3 rounded-md">Your Rule: When you successfully complete all sets and reps for an exercise at a given weight, add the smallest available weight (e.g., 1.25kg / 2.5lbs per side) the *next* time you do that exercise.</p>
+            <h3>Session Details</h3>
+            <details open>
+                <summary>Upper A – Strength Foundation <span class="tag">Bench 3–5 reps</span></summary>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Exercise</th>
+                            <th>Sets</th>
+                            <th>Reps</th>
+                            <th>Rest</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Barbell Bench Press</td>
+                            <td>4</td>
+                            <td>3–5</td>
+                            <td>3–5 min</td>
+                            <td>Paused on chest, drive through heels.</td>
+                        </tr>
+                        <tr>
+                            <td>Weighted Pull-Up / Lat Pulldown</td>
+                            <td>4</td>
+                            <td>5–8</td>
+                            <td>2–3 min</td>
+                            <td>Maintain scapular depression.</td>
+                        </tr>
+                        <tr>
+                            <td>Seated DB Overhead Press</td>
+                            <td>3</td>
+                            <td>6–10</td>
+                            <td>2–3 min</td>
+                            <td>Neutral spine, drive elbows under wrists.</td>
+                        </tr>
+                        <tr>
+                            <td>Barbell Row</td>
+                            <td>3</td>
+                            <td>6–10</td>
+                            <td>2–3 min</td>
+                            <td>Explosive concentric, controlled eccentric.</td>
+                        </tr>
+                        <tr>
+                            <td>Close-Grip Bench Press</td>
+                            <td>3</td>
+                            <td>6–10</td>
+                            <td>2 min</td>
+                            <td>Focus on lockout power.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </details>
 
-                        <h3 class="text-xl font-bold text-sky-700">2. Frequency (2x/Week)</h3>
-                        <p class="text-stone-700">Research shows that hitting a muscle group twice per week (like in this PPL split) is superior for muscle growth compared to a traditional "bro split" (once per week). This keeps muscle protein synthesis elevated more often.</p>
+            <details>
+                <summary>Lower A – Hypertrophy Driver <span class="tag">Quad Volume</span></summary>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Exercise</th>
+                            <th>Sets</th>
+                            <th>Reps</th>
+                            <th>Rest</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Back Squat</td>
+                            <td>4</td>
+                            <td>8–12</td>
+                            <td>2–3 min</td>
+                            <td>Full depth, control tempo.</td>
+                        </tr>
+                        <tr>
+                            <td>Romanian Deadlift</td>
+                            <td>3</td>
+                            <td>8–12</td>
+                            <td>2–3 min</td>
+                            <td>Hip hinge, slight knee bend.</td>
+                        </tr>
+                        <tr>
+                            <td>Leg Press</td>
+                            <td>3</td>
+                            <td>10–15</td>
+                            <td>2 min</td>
+                            <td>Push through mid-foot.</td>
+                        </tr>
+                        <tr>
+                            <td>Lying Leg Curl</td>
+                            <td>3</td>
+                            <td>12–15</td>
+                            <td>90 sec</td>
+                            <td>Control eccentric.</td>
+                        </tr>
+                        <tr>
+                            <td>Standing Calf Raise</td>
+                            <td>4</td>
+                            <td>10–15</td>
+                            <td>60 sec</td>
+                            <td>Pause at stretch and peak.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </details>
 
-                        <h3 class="text-xl font-bold text-sky-700">3. Volume (Total Work)</h3>
-                        <p class="text-stone-700">Volume (Sets x Reps x Weight) is a key driver of hypertrophy. This plan includes high volume, especially for your priority areas (Legs, Chest, Arms). The chart shows the approximate weekly set volume distribution for this plan, reflecting your goals.</p>
-                        <div class="chart-container">
-                            <canvas id="volumeChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="bg-white p-6 rounded-lg shadow border border-stone-200 space-y-4">
-                        <h3 class="text-xl font-bold text-sky-700">4. Intensity (%1RM & Rep Ranges)</h3>
-                        <p class="text-stone-700">We use different rep ranges to target both strength and hypertrophy:</p>
-                        <ul class="list-disc list-inside space-y-2 text-stone-700">
-                            <li><strong class="text-stone-800">Strength (4-6 Reps):</strong> Uses heavy loads (80-85%+ 1RM) to increase neural drive and maximal force. This is for your Bench Press 'A' day.</li>
-                            <li><strong class="text-stone-800">Hypertrophy (8-12 Reps):</strong> The "sweet spot" for muscle growth, balancing mechanical tension and metabolic stress.</li>
-                            <li><strong class="text-stone-800">Metabolic Stress (12-20+ Reps):</strong> Creates a "pump" and forces muscle adaptation through different pathways. Used for isolation moves (forearms, calves, leg extensions).</li>
-                        </ul>
+            <details>
+                <summary>Upper B – Hypertrophy Volume <span class="tag">6–12 reps</span></summary>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Exercise</th>
+                            <th>Sets</th>
+                            <th>Reps</th>
+                            <th>Rest</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Incline Dumbbell Press</td>
+                            <td>4</td>
+                            <td>8–12</td>
+                            <td>2–3 min</td>
+                            <td>15–30° bench angle.</td>
+                        </tr>
+                        <tr>
+                            <td>T-Bar or Seated Cable Row</td>
+                            <td>4</td>
+                            <td>8–12</td>
+                            <td>2–3 min</td>
+                            <td>Lead with elbows, squeeze upper back.</td>
+                        </tr>
+                        <tr>
+                            <td>Dumbbell Lateral Raise</td>
+                            <td>3</td>
+                            <td>12–20</td>
+                            <td>90 sec</td>
+                            <td>Soft elbows, slow eccentric.</td>
+                        </tr>
+                        <tr>
+                            <td>Incline Dumbbell Curl</td>
+                            <td>3</td>
+                            <td>10–15</td>
+                            <td>90 sec</td>
+                            <td>Elbows behind torso for long head stretch.</td>
+                        </tr>
+                        <tr>
+                            <td>Overhead Tricep Extension (EZ/Rope)</td>
+                            <td>3</td>
+                            <td>10–15</td>
+                            <td>90 sec</td>
+                            <td>Keep ribs stacked, full lockout.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </details>
 
-                        <h3 class="text-xl font-bold text-sky-700">5. Rest Periods</h3>
-                        <p class="text-stone-700">Since effectiveness is your goal (not efficiency), rest periods are set for full recovery. This allows you to lift heavier on each set, leading to better progressive overload.</p>
-                        <ul class="list-disc list-inside space-y-2 text-stone-700">
-                            <li><strong class="text-stone-800">3-5 Minutes:</strong> For heavy compound lifts (Bench, Squat, Deadlift).</li>
-                            <li><strong class="text-stone-800">90 Secs - 2.5 Mins:</strong> For accessory/hypertrophy lifts (Rows, Curls, Extensions).</li>
-                        </ul>
-                    </div>
-                </div>
+            <details>
+                <summary>Lower B – Strength Anchor <span class="tag">Squat 3–5 reps</span></summary>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Exercise</th>
+                            <th>Sets</th>
+                            <th>Reps</th>
+                            <th>Rest</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Back Squat</td>
+                            <td>4</td>
+                            <td>3–5</td>
+                            <td>3–5 min</td>
+                            <td>Braced torso, drive out of the hole.</td>
+                        </tr>
+                        <tr>
+                            <td>Barbell Hip Thrust</td>
+                            <td>3</td>
+                            <td>6–10</td>
+                            <td>2–3 min</td>
+                            <td>Pause at top for glute squeeze.</td>
+                        </tr>
+                        <tr>
+                            <td>Bulgarian Split Squat</td>
+                            <td>3</td>
+                            <td>8–12 / leg</td>
+                            <td>2 min</td>
+                            <td>Vertical torso, track knee over toes.</td>
+                        </tr>
+                        <tr>
+                            <td>Seated Leg Curl</td>
+                            <td>3</td>
+                            <td>8–12</td>
+                            <td>90 sec</td>
+                            <td>Full range, toes dorsiflexed.</td>
+                        </tr>
+                        <tr>
+                            <td>Seated Calf Raise</td>
+                            <td>4</td>
+                            <td>15–20</td>
+                            <td>60 sec</td>
+                            <td>Controlled tempo, peak contraction.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </details>
 
-            </section>
+            <details>
+                <summary>Upper C – Arm &amp; Chest Specialization <span class="tag">High Volume</span></summary>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Exercise</th>
+                            <th>Sets</th>
+                            <th>Reps</th>
+                            <th>Rest</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Weighted Dips (Chest Lean)</td>
+                            <td>4</td>
+                            <td>8–12</td>
+                            <td>2–3 min</td>
+                            <td>Lean forward, flare elbows slightly.</td>
+                        </tr>
+                        <tr>
+                            <td>One-Arm Dumbbell Row</td>
+                            <td>3</td>
+                            <td>10–15 / arm</td>
+                            <td>2 min</td>
+                            <td>Staggered stance, full stretch.</td>
+                        </tr>
+                        <tr>
+                            <td>EZ-Bar Curl</td>
+                            <td>3</td>
+                            <td>8–12</td>
+                            <td>90 sec</td>
+                            <td>Keep shoulders down, squeeze peak.</td>
+                        </tr>
+                        <tr>
+                            <td>Tricep Rope Pushdown</td>
+                            <td>3</td>
+                            <td>12–15</td>
+                            <td>90 sec</td>
+                            <td>Externally rotate handles at bottom.</td>
+                        </tr>
+                        <tr>
+                            <td>Cable Crossover (High-to-Low)</td>
+                            <td>3</td>
+                            <td>12–15</td>
+                            <td>90 sec</td>
+                            <td>Cross hands slightly for full contraction.</td>
+                        </tr>
+                        <tr>
+                            <td>Face Pull</td>
+                            <td>3</td>
+                            <td>15–20</td>
+                            <td>60 sec</td>
+                            <td>Elbows high, pause at face.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </details>
 
-            <section id="content-calculator" class="content-section hidden">
-                <div class="bg-white p-5 rounded-lg shadow-sm border border-stone-200 mb-6">
-                    <p class="text-stone-700 leading-relaxed">You should <strong class="text-sky-700">not</strong> test your true 1-Rep Max (1RM) as a beginner; it's unsafe. Instead, use this calculator. Lift a weight you can manage for 5-10 reps with good form. Enter the weight and the reps you completed, and it will estimate your 1RM. Use this number to calculate the percentages for your plan. Re-calculate every 4-6 weeks to adjust your working weights.</p>
-                </div>
+            <details>
+                <summary>Lower C – Leg &amp; Forearm Volume <span class="tag">Grip Focus</span></summary>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Exercise</th>
+                            <th>Sets</th>
+                            <th>Reps</th>
+                            <th>Rest</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Front Squat or Hack Squat</td>
+                            <td>4</td>
+                            <td>8–12</td>
+                            <td>2–3 min</td>
+                            <td>Upright torso, mid-foot pressure.</td>
+                        </tr>
+                        <tr>
+                            <td>Glute-Ham Raise / Nordic Curl</td>
+                            <td>3</td>
+                            <td>To near-failure</td>
+                            <td>2 min</td>
+                            <td>Control descent, assist up as needed.</td>
+                        </tr>
+                        <tr>
+                            <td>Leg Extension</td>
+                            <td>3</td>
+                            <td>15–20</td>
+                            <td>90 sec</td>
+                            <td>Pause at top, slow negative.</td>
+                        </tr>
+                        <tr>
+                            <td>Dumbbell Wrist Curl</td>
+                            <td>3</td>
+                            <td>12–20</td>
+                            <td>60 sec</td>
+                            <td>Forearms supported, full flexion.</td>
+                        </tr>
+                        <tr>
+                            <td>Dumbbell Reverse Wrist Curl</td>
+                            <td>3</td>
+                            <td>12–20</td>
+                            <td>60 sec</td>
+                            <td>Light loads, constant tension.</td>
+                        </tr>
+                        <tr>
+                            <td>Farmer's Walk</td>
+                            <td>3</td>
+                            <td>30–45 sec</td>
+                            <td>90 sec</td>
+                            <td>Neutral spine, crush grip.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </details>
+        </section>
 
-                <div class="grid md:grid-cols-2 gap-6">
-                    <div class="bg-white p-6 rounded-lg shadow border border-stone-200">
-                        <h3 class="text-2xl font-bold text-sky-700 mb-4">1. Estimate Your 1RM</h3>
-                        <div class="space-y-4">
-                            <div>
-                                <label for="calc-weight" class="block text-sm font-medium text-stone-700 mb-1">Weight Lifted (kg or lbs)</label>
-                                <input type="number" id="calc-weight" placeholder="e.g., 60">
-                            </div>
-                            <div>
-                                <label for="calc-reps" class="block text-sm font-medium text-stone-700 mb-1">Reps Completed (5-12)</label>
-                                <input type="number" id="calc-reps" placeholder="e.g., 8">
-                            </div>
-                            <button id="calc-button" class="w-full bg-sky-600 text-white font-bold py-3 px-4 rounded-md hover:bg-sky-700 transition-colors">Calculate</button>
-                        </div>
-                        <div id="calc-result-container" class="mt-6 text-center hidden">
-                            <span class="block text-lg text-stone-600">Your Estimated 1RM is:</span>
-                            <span id="calc-result" class="block text-5xl font-bold text-sky-700">0</span>
-                        </div>
-                    </div>
+        <section id="execution">
+            <h2>Execution &amp; Rationale Notes</h2>
+            <p>Use these cues to keep technique sharp and ensure each exercise hits its intended muscle group or sticking point.</p>
+            <h3>Chest &amp; Pressing Performance</h3>
+            <ul>
+                <li><strong>Barbell Bench Press</strong>: retract scapulae, slight arch, pause on chest for raw strength.</li>
+                <li><strong>Incline Press</strong>: 15–30° bench. Drive dumbbells slightly inward to bias upper fibers.</li>
+                <li><strong>Weighted Dips</strong>: maintain forward lean to recruit lower chest while respecting shoulder comfort.</li>
+            </ul>
+            <h3>Bench Press Assistance</h3>
+            <ul>
+                <li><strong>Close-Grip Bench</strong> boosts lockout power via triceps overload.</li>
+                <li><strong>Paused Bench Variations</strong> eliminate stretch reflex, reinforcing strength off the chest.</li>
+                <li><strong>Rows &amp; Face Pulls</strong> create a stable pressing platform and shoulder health.</li>
+            </ul>
+            <h3>Lower Body Development</h3>
+            <ul>
+                <li><strong>Back Squat</strong>: full-depth squats double quad hypertrophy versus partials.</li>
+                <li><strong>Romanian Deadlift</strong>: hinge from hips, maintain hamstring tension throughout.</li>
+                <li><strong>Machine Work</strong>: leg press, hack squat, and extensions provide safe failure-ready volume.</li>
+            </ul>
+            <h3>Arm &amp; Forearm Focus</h3>
+            <ul>
+                <li><strong>Incline Curls</strong>: shoulder extension stretches the long head for peak shape.</li>
+                <li><strong>Overhead Extensions</strong>: lengthened triceps long head equals maximal recruitment.</li>
+                <li><strong>Hammer &amp; Wrist Variations</strong>: round out brachialis and forearm development for overall arm density.</li>
+            </ul>
+        </section>
 
-                    <div id="progression-table" class="bg-white p-6 rounded-lg shadow border border-stone-200 hidden">
-                        <h3 class="text-2xl font-bold text-sky-700 mb-4">2. Your Working Weights</h3>
-                        <p class="text-sm text-stone-600 mb-4">Use this table to find your starting weights for the plan based on your estimated 1RM.</p>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left">
-                                <thead class="bg-stone-50 border-b border-stone-200">
-                                    <tr>
-                                        <th class="p-3 text-sm font-semibold text-stone-600">Percentage</th>
-                                        <th class="p-3 text-sm font-semibold text-stone-600">Weight</th>
-                                        <th class="p-3 text-sm font-semibold text-stone-600">Typical Reps</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="progression-tbody">
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+        <section id="calculator">
+            <h2>1RM Estimator &amp; Working Percentages</h2>
+            <p>Calculate estimated 1RM from a submaximal set, then reference the load table to program your next session. Ideal for early-stage lifters avoiding maximal attempts.</p>
+            <div class="calculator">
+                <label for="weight">Weight lifted (kg or lb)</label>
+                <input type="number" id="weight" min="1" step="0.5" placeholder="e.g. 60">
 
-            </section>
-        </main>
+                <label for="reps">Repetitions performed</label>
+                <input type="number" id="reps" min="1" max="30" placeholder="e.g. 10">
 
-    </div>
+                <button id="calculate">Calculate e1RM</button>
+            </div>
+            <div id="results" class="result-card" hidden>
+                <h3 id="e1rm-heading">Estimated 1RM</h3>
+                <p class="subtle">Loads below round to the nearest available increment in your gym.</p>
+                <table id="percentage-table">
+                    <thead>
+                        <tr>
+                            <th>% of 1RM</th>
+                            <th>Estimated Reps</th>
+                            <th>Target Weight</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        Crafted for focused training sessions. Keep logging, keep progressing.
+    </footer>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const navButtons = document.querySelectorAll('.nav-button');
-            const contentSections = document.querySelectorAll('.content-section');
-            const workoutNavButtons = document.querySelectorAll('.workout-nav-button');
-            const workoutContents = document.querySelectorAll('.workout-content');
+        const weightInput = document.getElementById('weight');
+        const repsInput = document.getElementById('reps');
+        const calculateBtn = document.getElementById('calculate');
+        const resultsCard = document.getElementById('results');
+        const percentageBody = document.querySelector('#percentage-table tbody');
+        const e1rmHeading = document.getElementById('e1rm-heading');
 
-            function switchTab(navItems, contentItems, clickedItem, activeClass) {
-                navItems.forEach(item => {
-                    if (item.classList.contains(activeClass)) {
-                        item.classList.remove(activeClass)
-                    }
-                });
-                contentItems.forEach(item => item.classList.add('hidden'));
-                
-                clickedItem.classList.add(activeClass);
-                const contentId = clickedItem.id.replace('-btn', '').replace('nav-', 'content-');
-                const targetContent = document.getElementById(contentId);
-                if (targetContent) {
-                    targetContent.classList.remove('hidden');
-                } else {
-                    const workoutTarget = document.getElementById(clickedItem.id.replace('-btn', ''));
-                    if (workoutTarget) {
-                        workoutTarget.classList.remove('hidden');
-                    }
-                }
+        const percentageRows = [
+            { percent: 100, reps: '1' },
+            { percent: 95, reps: '2' },
+            { percent: 90, reps: '3–4' },
+            { percent: 85, reps: '5–6' },
+            { percent: 80, reps: '7–8' },
+            { percent: 75, reps: '9–10' },
+            { percent: 70, reps: '11–12' },
+            { percent: 65, reps: '13–15' },
+            { percent: 60, reps: '16–20' },
+            { percent: 55, reps: '20+' }
+        ];
+
+        const formatWeight = (value) => {
+            if (Number.isNaN(value)) return '-';
+            const rounded = Math.round(value * 10) / 10;
+            return rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(1);
+        };
+
+        calculateBtn.addEventListener('click', () => {
+            const weight = parseFloat(weightInput.value);
+            const reps = parseFloat(repsInput.value);
+
+            if (!weight || !reps || reps < 1) {
+                resultsCard.hidden = true;
+                calculateBtn.textContent = 'Enter valid numbers';
+                setTimeout(() => (calculateBtn.textContent = 'Calculate e1RM'), 1600);
+                return;
             }
 
-            navButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    switchTab(navButtons, contentSections, button, 'active');
-                });
-            });
+            const e1rm = weight * (1 + reps / 30);
+            e1rmHeading.textContent = `Estimated 1RM: ${formatWeight(e1rm)} (same units as input)`;
 
-            workoutNavButtons.forEach(button => {
-                if (button.disabled) return;
-                button.addEventListener('click', () => {
-                    switchTab(workoutNavButtons, workoutContents, button, 'active');
-                });
-            });
-
-            const calcButton = document.getElementById('calc-button');
-            const calcWeight = document.getElementById('calc-weight');
-            const calcReps = document.getElementById('calc-reps');
-            const calcResult = document.getElementById('calc-result');
-            const calcResultContainer = document.getElementById('calc-result-container');
-            const progressionTable = document.getElementById('progression-table');
-            const progressionTbody = document.getElementById('progression-tbody');
-            const repMap = {
-                100: '1', 95: '2-3', 90: '3-4', 85: '5-6', 80: '7-8',
-                75: '8-10', 70: '10-12', 65: '12-15', 60: '15-20', 55: '20-25', 50: '25+'
-            };
-
-            calcButton.addEventListener('click', () => {
-                const weight = parseFloat(calcWeight.value);
-                const reps = parseInt(calcReps.value);
-
-                if (!weight || !reps || weight <= 0 || reps <= 0) {
-                    
-                    const modal = document.createElement('div');
-                    modal.className = 'fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center';
-                    modal.innerHTML = `
-                        <div class="relative p-5 border w-96 shadow-lg rounded-md bg-white">
-                            <div class="mt-3 text-center">
-                                <h3 class="text-lg leading-6 font-medium text-gray-900">Invalid Input</h3>
-                                <div class="mt-2 px-7 py-3">
-                                    <p class="text-sm text-gray-500">Please enter valid numbers for weight and reps.</p>
-                                </div>
-                                <div class="items-center px-4 py-3">
-                                    <button id="modal-ok-btn" class="px-4 py-2 bg-sky-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
-                                        OK
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    document.body.appendChild(modal);
-                    document.getElementById('modal-ok-btn').onclick = () => {
-                        document.body.removeChild(modal);
-                    };
-                    return;
-                }
-                
-                let oneRepMax;
-                if (reps === 1) {
-                    oneRepMax = weight;
-                } else if (reps > 12) {
-                    
-                    const modal = document.createElement('div');
-                    modal.className = 'fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center';
-                    modal.innerHTML = `
-                        <div class="relative p-5 border w-96 shadow-lg rounded-md bg-white">
-                            <div class="mt-3 text-center">
-                                <h3 class="text-lg leading-6 font-medium text-gray-900">Invalid Reps</h3>
-                                <div class="mt-2 px-7 py-3">
-                                    <p class="text-sm text-gray-500">Please enter reps between 1 and 12 for the most accurate estimate.</p>
-                                </div>
-                                <div class="items-center px-4 py-3">
-                                    <button id="modal-ok-btn-reps" class="px-4 py-2 bg-sky-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
-                                        OK
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    document.body.appendChild(modal);
-                    document.getElementById('modal-ok-btn-reps').onclick = () => {
-                        document.body.removeChild(modal);
-                    };
-                    return;
-                } else {
-                    oneRepMax = weight / (1.0278 - (0.0278 * reps));
-                }
-
-                calcResult.textContent = oneRepMax.toFixed(1);
-                calcResultContainer.classList.remove('hidden');
-
-                updateProgressionTable(oneRepMax);
-            });
-
-            function updateProgressionTable(oneRepMax) {
-                progressionTbody.innerHTML = '';
-                [100, 95, 90, 85, 80, 75, 70, 65, 60].forEach(percent => {
-                    const weight = (oneRepMax * (percent / 100)).toFixed(1);
-                    const repRange = repMap[percent] || '-';
-                    const row = `
-                        <tr class="border-b border-stone-200">
-                            <td class="p-3 font-medium text-sky-700">${percent}%</td>
-                            <td class="p-3 text-stone-800">${weight}</td>
-                            <td class-"p-3 text-stone-600">${repRange}</td>
-                        </tr>
-                    `;
-                    progressionTbody.innerHTML += row;
-                });
-                progressionTable.classList.remove('hidden');
-            }
-
-            try {
-                const ctx = document.getElementById('volumeChart').getContext('2d');
-                if (ctx) {
-                    new Chart(ctx, {
-                        type: 'pie',
-                        data: {
-                            labels: ['Legs', 'Back', 'Chest', 'Shoulders', 'Arms & Forearms'],
-                            datasets: [{
-                                label: 'Weekly Set Volume',
-                                data: [25, 20, 20, 15, 20],
-                                backgroundColor: [
-                                    'rgba(56, 189, 248, 0.7)',
-                                    'rgba(14, 165, 233, 0.7)',
-                                    'rgba(2, 132, 199, 0.7)',
-                                    'rgba(3, 105, 161, 0.7)',
-                                    'rgba(7, 89, 133, 0.7)'
-                                ],
-                                borderColor: 'rgba(255, 255, 255, 0.7)',
-                                borderWidth: 1
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: {
-                                    position: 'bottom',
-                                    labels: {
-                                        color: '#44403c'
-                                    }
-                                },
-                                title: {
-                                    display: true,
-                                    text: 'Approx. Weekly Volume Distribution',
-                                    color: '#44403c',
-                                    font: {
-                                        size: 16
-                                    }
-                                },
-                                tooltip: {
-                                    callbacks: {
-                                        label: function(context) {
-                                            return `${context.label}: ${context.raw}%`;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    });
-                }
-            } catch (e) {
-                console.error('Error initializing chart:', e);
-            }
-
-            const originalAlert = window.alert;
-            window.alert = function(message) {
-                const modal = document.createElement('div');
-                modal.className = 'fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50';
-                modal.innerHTML = `
-                    <div class="relative p-5 border w-96 shadow-lg rounded-md bg-white">
-                        <div class="mt-3 text-center">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900">Notification</h3>
-                            <div class="mt-2 px-7 py-3">
-                                <p class="text-sm text-gray-500">${message}</p>
-                            </div>
-                            <div class="items-center px-4 py-3">
-                                <button id="modal-ok-btn-alert" class="px-4 py-2 bg-sky-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
-                                    OK
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+            percentageBody.innerHTML = '';
+            percentageRows.forEach(({ percent, reps: repGuide }) => {
+                const target = e1rm * (percent / 100);
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${percent}%</td>
+                    <td>${repGuide}</td>
+                    <td>${formatWeight(target)}</td>
                 `;
-                document.body.appendChild(modal);
-                document.getElementById('modal-ok-btn-alert').onclick = () => {
-                    document.body.removeChild(modal);
-                };
-            };
-
-            const switchTabElements = document.querySelectorAll('[id^="nav-"], .workout-nav-button');
-            switchTabElements.forEach(element => {
-                if (element.disabled) return;
-                element.addEventListener('click', function() {
-                    let itemsToToggle;
-                    let activeClass;
-
-                    if (this.classList.contains('nav-button')) {
-                        itemsToToggle = document.querySelectorAll('.nav-button');
-                        activeClass = 'active';
-                        contentSections.forEach(s => s.classList.add('hidden'));
-                        const contentId = this.id.replace('nav-', 'content-');
-                        document.getElementById(contentId)?.classList.remove('hidden');
-                    } else if (this.classList.contains('workout-nav-button')) {
-                        itemsToToggle = document.querySelectorAll('.workout-nav-button');
-                        activeClass = 'active';
-                        workoutContents.forEach(s => s.classList.add('hidden'));
-                        const contentId = this.id.replace('-btn', '');
-                        document.getElementById(contentId)?.classList.remove('hidden');
-                    }
-
-                    if (itemsToToggle) {
-                        itemsToToggle.forEach(item => item.classList.remove(activeClass));
-                        this.classList.add(activeClass);
-                    }
-                });
+                percentageBody.appendChild(row);
             });
 
-            document.getElementById('nav-plan').click();
-            document.getElementById('workout-day-1-btn').click();
+            resultsCard.hidden = false;
         });
     </script>
 </body>
 </html>
-
