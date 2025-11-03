@@ -1,6 +1,6 @@
 <!-- Chosen Palette: Calm Neutrals (Stone, Sky Blue) -->
 <!-- Application Structure Plan: A 3-tab SPA. Tab 1 ('The 6-Day Plan') is the core interactive report, using sub-navigation for 6 workout days. This immediately answers the user's need for a plan. Tab 2 ('Core Principles') provides the 'science' (the 'why') from the report requirements, including a visual (Pie Chart) for volume breakdown. Tab 3 ('1RM & Progression Calculator') provides a crucial interactive tool (%1RM calculator) directly requested by the user to apply the plan. This structure separates the 'what' (Plan) from the 'why' (Principles) and the 'how' (Calculator) for maximum usability and clarity. -->
-<!-- Visualization & Content Choices: Report Info: 6-day workout plan details. Goal: Present detailed, day-by-day schedule. Method: Interactive tabbed view (HTML/JS) for each day, detailing exercises/sets/reps/%1RM/Rest. Interaction: User clicks 'Day 1' through 'Day 6' to see that day's specific workout. Justification: Most direct way to present a complex, multi-day schedule in a clean, non-overwhelming format. | Report Info: User's %1RM requirement and beginner status. Goal: Enable user to find their working weights and apply the plan. Method: 1RM Calculator Tool (HTML/JS). Interaction: User inputs weight/reps, clicks 'Calculate', and receives an estimated 1RM and a full table of working percentages. Justification: Essential tool for plan adherence and safety, as a beginner should not test a true 1RM. | Report Info: 'Science-based' requirement. Goal: Summarize program focus visually. Method: Pie Chart (Chart.js/Canvas). Interaction: Hover for tooltip. Justification: Quick visual summary of muscle group volume. -->
+<!-- Visualization & Content Choices: Report Info: 6-day workout plan details. Goal: Present detailed, day-by-day schedule. Method: Interactive tabbed view (HTML/JS) for each day, detailing exercises/sets/reps/%1RM/Rest. Interaction: User clicks 'Monday' through 'Saturday' to see that day's specific workout. Justification: Most direct way to present a complex, multi-day schedule in a clean, non-overwhelming format. | Report Info: User's %1RM requirement and beginner status. Goal: Enable user to find their working weights and apply the plan. Method: 1RM Calculator Tool (HTML/JS). Interaction: User inputs weight/reps, clicks 'Calculate', and receives an estimated 1RM and a full table of working percentages. Justification: Essential tool for plan adherence and safety, as a beginner should not test a true 1RM. | Report Info: 'Science-based' requirement. Goal: Summarize program focus visually. Method: Pie Chart (Chart.js/Canvas). Interaction: Hover for tooltip. Justification: Quick visual summary of muscle group volume. -->
 <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
 <!DOCTYPE html>
 <html lang="en">
@@ -26,10 +26,10 @@
             max-height: 350px;
         }
         .nav-button {
-            @apply py-3 px-4 md:px-6 text-sm md:text-base font-medium text-center text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300 cursor-pointer transition-all;
+            @apply py-3 px-4 md:px-5 lg:px-6 text-sm md:text-base font-medium text-center text-gray-500 border-b-2 border-transparent rounded-t-lg hover:text-gray-700 hover:bg-stone-100 hover:border-gray-300 cursor-pointer transition-all;
         }
         .nav-button.active {
-            @apply text-sky-600 border-sky-600;
+            @apply text-sky-600 border-sky-600 bg-white;
         }
         .workout-nav-button {
             @apply py-2 px-4 text-sm font-medium text-center text-gray-600 bg-white rounded-lg shadow-sm border border-gray-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-all;
@@ -57,10 +57,10 @@
             <p class="text-lg md:text-xl text-stone-600">A science-based protocol optimized for effectiveness, targeting your specific goals for mass and strength.</p>
         </header>
 
-        <nav class="flex flex-wrap border-b-2 border-stone-200 mb-6">
+        <nav class="flex flex-wrap border-b-2 border-stone-200 mb-6 gap-x-2">
             <button id="nav-plan" class="nav-button active">The 6-Day Plan</button>
-            <button id="nav-principles" class="nav-button">Core Principles (The 'Why')</button>
-            <button id="nav-calculator" class="nav-button">1RM & Progression Calculator</button>
+            <button id="nav-principles" class="nav-button">Core Principles</button>
+            <button id="nav-calculator" class="nav-button">Progression Calculator</button>
         </nav>
 
         <main>
@@ -70,16 +70,17 @@
                 </div>
 
                 <div class="flex flex-wrap gap-2 md:gap-4 mb-6">
-                    <button id="workout-day-1-btn" class="workout-nav-button active">Day 1: Push A (Strength)</button>
-                    <button id="workout-day-2-btn" class="workout-nav-button">Day 2: Pull A (Mass)</button>
-                    <button id="workout-day-3-btn" class="workout-nav-button">Day 3: Legs A (Mass)</button>
-                    <button id="workout-day-4-btn" class="workout-nav-button">Day 4: Push B (Mass)</button>
-                    <button id="workout-day-5-btn" class="workout-nav-button">Day 5: Pull B (Mass)</button>
-                    <button id="workout-day-6-btn" class="workout-nav-button">Day 6: Legs B (Mass)</button>
+                    <button id="workout-day-1-btn" class="workout-nav-button active">Monday: Push A (Strength)</button>
+                    <button id="workout-day-2-btn" class="workout-nav-button">Tuesday: Pull A (Mass)</button>
+                    <button id="workout-day-3-btn" class="workout-nav-button">Wednesday: Legs A (Mass)</button>
+                    <button id="workout-day-4-btn" class="workout-nav-button">Thursday: Push B (Mass)</button>
+                    <button id="workout-day-5-btn" class="workout-nav-button">Friday: Pull B (Mass)</button>
+                    <button id="workout-day-6-btn" class="workout-nav-button">Saturday: Legs B (Mass)</button>
+                    <button class="workout-nav-button bg-stone-100 text-stone-500 cursor-not-allowed" disabled>Sunday: Rest</button>
                 </div>
 
                 <div id="workout-day-1" class="workout-content space-y-4">
-                    <h3 class="text-2xl font-bold text-sky-700">Day 1: Push A (Chest, Shoulders, Triceps) - Strength Focus</h3>
+                    <h3 class="text-2xl font-bold text-sky-700">Monday: Push A (Chest, Shoulders, Triceps) - Strength Focus</h3>
                     <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
                         <h4 class="font-bold text-lg text-sky-600">Barbell Bench Press</h4>
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
@@ -128,7 +129,7 @@
                 </div>
 
                 <div id="workout-day-2" class="workout-content hidden space-y-4">
-                    <h3 class="text-2xl font-bold text-sky-700">Day 2: Pull A (Back, Biceps, Forearms) - Mass Focus</h3>
+                    <h3 class="text-2xl font-bold text-sky-700">Tuesday: Pull A (Back, Biceps, Forearms) - Mass Focus</h3>
                     <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
                         <h4 class="font-bold text-lg text-sky-600">Pull-Ups (Assisted or Bodyweight)</h4>
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
@@ -177,7 +178,7 @@
                 </div>
 
                 <div id="workout-day-3" class="workout-content hidden space-y-4">
-                    <h3 class="text-2xl font-bold text-sky-700">Day 3: Legs A (Quads, Hamstrings, Calves) - Mass Focus</h3>
+                    <h3 class="text-2xl font-bold text-sky-700">Wednesday: Legs A (Quads, Hamstrings, Calves) - Mass Focus</h3>
                     <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
                         <h4 class="font-bold text-lg text-sky-600">Barbell Squats</h4>
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
@@ -226,7 +227,7 @@
                 </div>
 
                 <div id="workout-day-4" class="workout-content hidden space-y-4">
-                    <h3 class="text-2xl font-bold text-sky-700">Day 4: Push B (Chest, Shoulders, Triceps) - Mass Focus</h3>
+                    <h3 class="text-2xl font-bold text-sky-700">Thursday: Push B (Chest, Shoulders, Triceps) - Mass Focus</h3>
                     <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
                         <h4 class="font-bold text-lg text-sky-600">Dumbbell Bench Press (Flat)</h4>
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
@@ -275,7 +276,7 @@
                 </div>
 
                 <div id="workout-day-5" class="workout-content hidden space-y-4">
-                    <h3 class="text-2xl font-bold text-sky-700">Day 5: Pull B (Back, Biceps, Forearms) - Mass Focus</h3>
+                    <h3 class="text-2xl font-bold text-sky-700">Friday: Pull B (Back, Biceps, Forearms) - Mass Focus</h3>
                     <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
                         <h4 class="font-bold text-lg text-sky-600">Deadlifts (Conventional)</h4>
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
@@ -295,7 +296,7 @@
                             <div><span class="font-semibold block text-sm text-stone-500">Rest</span>2 mins</div>
                         </div>
                     </div>
-                    <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
+                    <div class.="bg-white p-4 rounded-lg shadow border border-stone-200">
                         <h4 class="font-bold text-lg text-sky-600">Single-Arm Dumbbell Rows</h4>
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
                             <div><span class="font-semibold block text-sm text-stone-500">Sets</span>3</div>
@@ -325,7 +326,7 @@
                 </div>
 
                 <div id="workout-day-6" class="workout-content hidden space-y-4">
-                    <h3 class="text-2xl font-bold text-sky-700">Day 6: Legs B (Quads, Hamstrings, Calves) - Mass Focus</h3>
+                    <h3 class="text-2xl font-bold text-sky-700">Saturday: Legs B (Quads, Hamstrings, Calves) - Mass Focus</h3>
                     <div class="bg-white p-4 rounded-lg shadow border border-stone-200">
                         <h4 class="font-bold text-lg text-sky-600">Front Squats (or Hack Squats)</h4>
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-stone-700">
@@ -472,7 +473,11 @@
             const workoutContents = document.querySelectorAll('.workout-content');
 
             function switchTab(navItems, contentItems, clickedItem, activeClass) {
-                navItems.forEach(item => item.classList.remove(activeClass));
+                navItems.forEach(item => {
+                    if (item.classList.contains(activeClass)) {
+                        item.classList.remove(activeClass)
+                    }
+                });
                 contentItems.forEach(item => item.classList.add('hidden'));
                 
                 clickedItem.classList.add(activeClass);
@@ -495,6 +500,7 @@
             });
 
             workoutNavButtons.forEach(button => {
+                if (button.disabled) return;
                 button.addEventListener('click', () => {
                     switchTab(workoutNavButtons, workoutContents, button, 'active');
                 });
@@ -517,14 +523,57 @@
                 const reps = parseInt(calcReps.value);
 
                 if (!weight || !reps || weight <= 0 || reps <= 0) {
-                    alert('Please enter valid numbers for weight and reps.');
+                    
+                    const modal = document.createElement('div');
+                    modal.className = 'fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center';
+                    modal.innerHTML = `
+                        <div class="relative p-5 border w-96 shadow-lg rounded-md bg-white">
+                            <div class="mt-3 text-center">
+                                <h3 class="text-lg leading-6 font-medium text-gray-900">Invalid Input</h3>
+                                <div class="mt-2 px-7 py-3">
+                                    <p class="text-sm text-gray-500">Please enter valid numbers for weight and reps.</p>
+                                </div>
+                                <div class="items-center px-4 py-3">
+                                    <button id="modal-ok-btn" class="px-4 py-2 bg-sky-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                                        OK
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(modal);
+                    document.getElementById('modal-ok-btn').onclick = () => {
+                        document.body.removeChild(modal);
+                    };
                     return;
                 }
                 
+                let oneRepMax;
                 if (reps === 1) {
                     oneRepMax = weight;
                 } else if (reps > 12) {
-                    alert('Please enter reps between 1 and 12 for the most accurate estimate.');
+                    
+                    const modal = document.createElement('div');
+                    modal.className = 'fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center';
+                    modal.innerHTML = `
+                        <div class="relative p-5 border w-96 shadow-lg rounded-md bg-white">
+                            <div class="mt-3 text-center">
+                                <h3 class="text-lg leading-6 font-medium text-gray-900">Invalid Reps</h3>
+                                <div class="mt-2 px-7 py-3">
+                                    <p class="text-sm text-gray-500">Please enter reps between 1 and 12 for the most accurate estimate.</p>
+                                </div>
+                                <div class="items-center px-4 py-3">
+                                    <button id="modal-ok-btn-reps" class="px-4 py-2 bg-sky-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                                        OK
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(modal);
+                    document.getElementById('modal-ok-btn-reps').onclick = () => {
+                        document.body.removeChild(modal);
+                    };
                     return;
                 } else {
                     oneRepMax = weight / (1.0278 - (0.0278 * reps));
@@ -545,7 +594,7 @@
                         <tr class="border-b border-stone-200">
                             <td class="p-3 font-medium text-sky-700">${percent}%</td>
                             <td class="p-3 text-stone-800">${weight}</td>
-                            <td class="p-3 text-stone-600">${repRange}</td>
+                            <td class-"p-3 text-stone-600">${repRange}</td>
                         </tr>
                     `;
                     progressionTbody.innerHTML += row;
@@ -606,6 +655,62 @@
             } catch (e) {
                 console.error('Error initializing chart:', e);
             }
+
+            const originalAlert = window.alert;
+            window.alert = function(message) {
+                const modal = document.createElement('div');
+                modal.className = 'fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50';
+                modal.innerHTML = `
+                    <div class="relative p-5 border w-96 shadow-lg rounded-md bg-white">
+                        <div class="mt-3 text-center">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">Notification</h3>
+                            <div class="mt-2 px-7 py-3">
+                                <p class="text-sm text-gray-500">${message}</p>
+                            </div>
+                            <div class="items-center px-4 py-3">
+                                <button id="modal-ok-btn-alert" class="px-4 py-2 bg-sky-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                                    OK
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                document.getElementById('modal-ok-btn-alert').onclick = () => {
+                    document.body.removeChild(modal);
+                };
+            };
+
+            const switchTabElements = document.querySelectorAll('[id^="nav-"], .workout-nav-button');
+            switchTabElements.forEach(element => {
+                if (element.disabled) return;
+                element.addEventListener('click', function() {
+                    let itemsToToggle;
+                    let activeClass;
+
+                    if (this.classList.contains('nav-button')) {
+                        itemsToToggle = document.querySelectorAll('.nav-button');
+                        activeClass = 'active';
+                        contentSections.forEach(s => s.classList.add('hidden'));
+                        const contentId = this.id.replace('nav-', 'content-');
+                        document.getElementById(contentId)?.classList.remove('hidden');
+                    } else if (this.classList.contains('workout-nav-button')) {
+                        itemsToToggle = document.querySelectorAll('.workout-nav-button');
+                        activeClass = 'active';
+                        workoutContents.forEach(s => s.classList.add('hidden'));
+                        const contentId = this.id.replace('-btn', '');
+                        document.getElementById(contentId)?.classList.remove('hidden');
+                    }
+
+                    if (itemsToToggle) {
+                        itemsToToggle.forEach(item => item.classList.remove(activeClass));
+                        this.classList.add(activeClass);
+                    }
+                });
+            });
+
+            document.getElementById('nav-plan').click();
+            document.getElementById('workout-day-1-btn').click();
         });
     </script>
 </body>
